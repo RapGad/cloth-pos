@@ -14,6 +14,11 @@ export const permissions = {
     return role === 'admin';
   },
 
+  canManageInventory: (role: UserRole | undefined): boolean => {
+    // Only admins can add, edit, delete products and change prices
+    return role === 'admin';
+  },
+
   // Routes accessible by role
   getAccessibleRoutes: (role: UserRole | undefined): string[] => {
     const commonRoutes = ['/', '/sales', '/inventory', '/transactions'];

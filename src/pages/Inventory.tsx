@@ -3,12 +3,17 @@ import { Plus, Trash2, Search, Edit2 } from 'lucide-react';
 import { api } from '../api.ts';
 import type { ProductWithVariants } from '../shared/types.ts';
 import { AddProductModal } from '../components/AddProductModal.tsx';
+import { useAuth } from '../contexts/AuthContext.tsx';
+import { permissions } from '../utils/permissions.ts';
 
 export const Inventory: React.FC = () => {
+  const { currentUser } = useAuth();
   const [products, setProducts] = useState<ProductWithVariants[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<ProductWithVariants | null>(null);
   const [search, setSearch] = useState('');
+
+  const canManage = permissions.canManageInventory(currentUser?.role);
 
   const loadProducts = async () => {
     const data = await api.getProducts();
@@ -35,13 +40,15 @@ export const Inventory: React.FC = () => {
     <div className="p-8 h-full flex flex-col">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-800">Inventory</h1>
-        <button 
-          onClick={() => setIsModalOpen(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition-colors"
-        >
-          <Plus size={20} />
-          Add Product
-        </button>
+        {canManage && (
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition-colors"
+          >
+            <Plus size={20} />
+            Add Product
+          </button>
+        )}
       </div>
 
       <div className="bg-white p-4 rounded-xl shadow-sm mb-6">
@@ -64,12 +71,12 @@ export const Inventory: React.FC = () => {
               <tr>
                 <th className="p-4 font-semibold text-gray-600">Product</th>
                 <th className="p-4 font-semibold text-gray-600">Category</th>
-                <th className="p-4 font-semibold text-gray-600 text-right">Cost</th>
+                {canManage && <th className="p-4 font-semibold text-gray-600 text-right">Cost</th>}
                 <th className="p-4 font-semibold text-gray-600 text-right">Selling</th>
-                <th className="p-4 font-semibold text-gray-600 text-right text-green-600">Profit</th>
+                {canManage && <th className="p-4 font-semibold text-gray-600 text-right text-green-600">Profit</th>}
                 <th className="p-4 font-semibold text-gray-600">Variants</th>
                 <th className="p-4 font-semibold text-gray-600">Total Stock</th>
-                <th className="p-4 font-semibold text-gray-600">Actions</th>
+                {canManage && <th className="p-4 font-semibold text-gray-600">Actions</th>}
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -85,9 +92,9 @@ export const Inventory: React.FC = () => {
                         {product.category || 'General'}
                       </span>
                     </td>
-                    <td className="p-4 text-right text-gray-500">GH₵{product.cost_price.toFixed(2)}</td>
+                    {canManage && <td className="p-4 text-right text-gray-500">GH₵{product.cost_price.toFixed(2)}</td>}
                     <td className="p-4 text-right font-bold text-blue-600">GH₵{product.selling_price.toFixed(2)}</td>
-                    <td className="p-4 text-right font-bold text-green-600">GH₵{totalProfit.toFixed(2)}</td>
+                    {canManage && <td className="p-4 text-right font-bold text-green-600">GH₵{totalProfit.toFixed(2)}</td>}
                     <td className="p-4">
                       <div className="flex gap-1 flex-wrap">
                         {product.variants.map(v => (
@@ -100,31 +107,33 @@ export const Inventory: React.FC = () => {
                     <td className="p-4 font-medium">
                       {totalStock}
                     </td>
-                    <td className="p-4">
-                      <div className="flex gap-2">
-                        <button 
-                          onClick={() => {
-                            setSelectedProduct(product);
-                            setIsModalOpen(true);
-                          }}
-                          className="text-blue-500 hover:bg-blue-50 p-2 rounded-lg transition-colors"
-                        >
-                          <Edit2 size={18} />
-                        </button>
-                        <button 
-                          onClick={() => handleDelete(product.id)}
-                          className="text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </div>
-                    </td>
+                    {canManage && (
+                      <td className="p-4">
+                        <div className="flex gap-2">
+                          <button 
+                            onClick={() => {
+                              setSelectedProduct(product);
+                              setIsModalOpen(true);
+                            }}
+                            className="text-blue-500 hover:bg-blue-50 p-2 rounded-lg transition-colors"
+                          >
+                            <Edit2 size={18} />
+                          </button>
+                          <button 
+                            onClick={() => handleDelete(product.id)}
+                            className="text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 );
               })}
               {filteredProducts.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="p-8 text-center text-gray-500">
+                  <td colSpan={canManage ? 8 : 5} className="p-8 text-center text-gray-500">
                     No products found.
                   </td>
                 </tr>
@@ -134,7 +143,7 @@ export const Inventory: React.FC = () => {
         </div>
       </div>
 
-      {isModalOpen && (
+      {isModalOpen && canManage && (
         <AddProductModal 
           initialProduct={selectedProduct || undefined}
           onClose={() => {
