@@ -1,12 +1,12 @@
 import { app, BrowserWindow, ipcMain } from "electron";
-import path$1 from "node:path";
+import path from "node:path";
 import { fileURLToPath } from "node:url";
 import Database from "better-sqlite3";
-import path from "path";
+import require$$1 from "path";
 class DBManager {
   db;
   constructor() {
-    const dbPath = path.join(app.getPath("userData"), "cloth-pos.db");
+    const dbPath = require$$1.join(app.getPath("userData"), "cloth-pos.db");
     this.db = new Database(dbPath);
     this.initSchema();
   }
@@ -345,19 +345,19 @@ class DBManager {
 app.commandLine.appendSwitch("disable-features", "Autofill,PasswordManager,AutofillServerCommunication,AutofillAddressEnabled,AutofillCreditCardEnabled");
 app.commandLine.appendSwitch("disable-autofill");
 console.log("Autofill features disabled via command line switches");
-const __dirname$1 = path$1.dirname(fileURLToPath(import.meta.url));
-process.env.APP_ROOT = path$1.join(__dirname$1, "..");
+const __dirname$1 = path.dirname(fileURLToPath(import.meta.url));
+process.env.APP_ROOT = path.join(__dirname$1, "..");
 const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"];
-const MAIN_DIST = path$1.join(process.env.APP_ROOT, "dist-electron");
-const RENDERER_DIST = path$1.join(process.env.APP_ROOT, "dist");
-process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path$1.join(process.env.APP_ROOT, "public") : RENDERER_DIST;
+const MAIN_DIST = path.join(process.env.APP_ROOT, "dist-electron");
+const RENDERER_DIST = path.join(process.env.APP_ROOT, "dist");
+process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, "public") : RENDERER_DIST;
 let win;
 function createWindow() {
   win = new BrowserWindow({
     width: 1200,
     height: 800,
     webPreferences: {
-      preload: path$1.join(__dirname$1, "preload.mjs"),
+      preload: path.join(__dirname$1, "preload.mjs"),
       nodeIntegration: false,
       contextIsolation: true
     }
@@ -367,9 +367,8 @@ function createWindow() {
   });
   if (VITE_DEV_SERVER_URL) {
     win.loadURL(VITE_DEV_SERVER_URL);
-    win.webContents.openDevTools();
   } else {
-    win.loadFile(path$1.join(RENDERER_DIST, "index.html"));
+    win.loadFile(path.join(RENDERER_DIST, "index.html"));
   }
 }
 app.on("window-all-closed", () => {
@@ -418,70 +417,45 @@ app.whenReady().then(() => {
     const printers = await event.sender.getPrintersAsync();
     return printers.length > 0;
   });
-  ipcMain.handle("get-printers", async (event) => {
-    const printers = await event.sender.getPrintersAsync();
-    return printers;
+  ipcMain.handle("get-printers", async () => {
+    const { getAllPrinters } = await import("./printer-D7skKQ9T.js");
+    return await getAllPrinters();
   });
-  ipcMain.handle("print-receipt", async (event, receiptData) => {
+  ipcMain.handle("print-receipt", async (_event, receiptData) => {
     try {
-      const win2 = BrowserWindow.fromWebContents(event.sender);
-      if (!win2) return false;
-      const receiptHTML = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <style>
-            body { font-family: 'Courier New', monospace; width: 300px; margin: 0; padding: 20px; }
-            .center { text-align: center; }
-            .bold { font-weight: bold; }
-            .line { border-top: 1px dashed #000; margin: 10px 0; }
-            table { width: 100%; }
-            td { padding: 2px 0; }
-            .right { text-align: right; }
-          </style>
-        </head>
-        <body>
-          <div class="center bold">${receiptData.storeName || "Clothing POS"}</div>
-          <div class="center">Receipt #${receiptData.receiptNumber}</div>
-          <div class="center">${new Date(receiptData.timestamp).toLocaleString()}</div>
-          <div class="line"></div>
-          <table>
-            ${receiptData.items.map((item) => `
-              <tr>
-                <td>${item.name}</td>
-                <td class="right">GH₵${item.price.toFixed(2)}</td>
-              </tr>
-              <tr>
-                <td style="padding-left: 10px; font-size: 0.9em;">${item.size}/${item.color} x${item.qty}</td>
-                <td></td>
-              </tr>
-            `).join("")}
-          </table>
-          <div class="line"></div>
-          <table>
-            <tr>
-              <td class="bold">TOTAL</td>
-              <td class="right bold">GH₵${receiptData.total.toFixed(2)}</td>
-            </tr>
-            <tr>
-              <td>Payment Method</td>
-              <td class="right">${receiptData.paymentMethod.toUpperCase()}</td>
-            </tr>
-          </table>
-          <div class="line"></div>
-          <div class="center">Thank you for your purchase!</div>
-        </body>
-        </html>
-      `;
-      await win2.webContents.print({
-        silent: false,
-        printBackground: true,
-        deviceName: receiptData.printerName || ""
-      }, (success, errorType) => {
-        if (!success) {
-          console.error("Print failed:", errorType);
-        }
+      const { printReceipt } = await import("./printer-D7skKQ9T.js");
+      const settingsData = db.getSettings();
+      const settingsMap = {};
+      settingsData.forEach((s) => {
+        settingsMap[s.key] = s.value;
       });
+      const printerSettings = {
+        printer_device_name: settingsMap.printerName || "",
+        printer_type: settingsMap.printerType || "system",
+        printer_paper_width: settingsMap.printerPaperWidth || "80mm",
+        store_name: settingsMap.storeName || "Clothing POS",
+        store_address: settingsMap.storeAddress || "",
+        store_phone: settingsMap.storePhone || "",
+        currency_symbol: settingsMap.currency || "GH₵",
+        receipt_footer: settingsMap.receiptFooter || "Thank you for your purchase!"
+      };
+      const saleData = {
+        receipt_number: receiptData.receiptNumber,
+        timestamp: receiptData.timestamp,
+        customer_name: receiptData.customerName,
+        payment_method: receiptData.paymentMethod,
+        total: receiptData.total * 100,
+        // Convert to cents
+        items: receiptData.items.map((item) => ({
+          name: item.name,
+          size: item.size,
+          color: item.color,
+          quantity: item.qty,
+          price: item.price * 100
+          // Convert to cents
+        }))
+      };
+      await printReceipt(saleData, printerSettings);
       return true;
     } catch (error) {
       console.error("Print error:", error);

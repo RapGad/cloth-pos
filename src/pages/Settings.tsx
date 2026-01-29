@@ -11,7 +11,9 @@ export const Settings: React.FC = () => {
     storeName: 'My Clothing Store',
     currency: 'GH₵',
     taxRate: '0',
-    printerName: 'Default Printer'
+    printerName: '',
+    printerType: 'system',
+    printerPaperWidth: '80mm'
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -35,6 +37,8 @@ export const Settings: React.FC = () => {
         if (s.key === 'currency') newSettings.currency = s.value;
         if (s.key === 'taxRate') newSettings.taxRate = s.value;
         if (s.key === 'printerName') newSettings.printerName = s.value;
+        if (s.key === 'printerType') newSettings.printerType = s.value;
+        if (s.key === 'printerPaperWidth') newSettings.printerPaperWidth = s.value;
       });
       setSettings(newSettings);
     } catch (err) {
@@ -90,6 +94,8 @@ export const Settings: React.FC = () => {
       await api.updateSetting('currency', settings.currency);
       await api.updateSetting('taxRate', settings.taxRate);
       await api.updateSetting('printerName', settings.printerName);
+      await api.updateSetting('printerType', settings.printerType);
+      await api.updateSetting('printerPaperWidth', settings.printerPaperWidth);
       alert('Settings saved successfully!');
     } catch (err) {
       console.error('Failed to save settings:', err);
@@ -236,6 +242,31 @@ export const Settings: React.FC = () => {
             Printer Configuration
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Printer Type</label>
+              <select 
+                className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                value={settings.printerType}
+                onChange={e => setSettings({ ...settings, printerType: e.target.value })}
+              >
+                <option value="system">System Printer</option>
+                <option value="usb">USB Thermal Printer</option>
+              </select>
+              <p className="text-xs text-gray-500 mt-1">
+                {settings.printerType === 'usb' ? 'Direct USB connection (ESC/POS)' : 'Use installed system printer'}
+              </p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Paper Width</label>
+              <select 
+                className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                value={settings.printerPaperWidth}
+                onChange={e => setSettings({ ...settings, printerPaperWidth: e.target.value })}
+              >
+                <option value="80mm">80mm (Standard)</option>
+                <option value="58mm">58mm (Compact)</option>
+              </select>
+            </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Receipt Printer</label>
               <select 
