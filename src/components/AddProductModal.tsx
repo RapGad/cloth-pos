@@ -21,8 +21,22 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ onClose, onSuc
   const [costPrice, setCostPrice] = useState(initialProduct ? initialProduct.cost_price.toString() : '');
   const [sellingPrice, setSellingPrice] = useState(initialProduct ? initialProduct.selling_price.toString() : '');
   const [category, setCategory] = useState(initialProduct?.category || 'General');
+  
+  // Detect if product has real variants (not just default)
+  const hasRealVariants = initialProduct 
+    ? initialProduct.variants.length > 1 || 
+      (initialProduct.variants.length === 1 && 
+       !(initialProduct.variants[0].size === 'Standard' && initialProduct.variants[0].color === 'Default'))
+    : false;
+  
+  const [hasVariants, setHasVariants] = useState(hasRealVariants);
+  const [stockQty, setStockQty] = useState(
+    initialProduct && !hasRealVariants 
+      ? initialProduct.variants[0]?.stock_qty || 0 
+      : 0
+  );
   const [variants, setVariants] = useState<VariantDraft[]>(
-    initialProduct 
+    initialProduct && hasRealVariants
       ? initialProduct.variants.map(v => ({ id: v.id, size: v.size, color: v.color, stock_qty: v.stock_qty }))
       : [{ size: 'M', color: 'Black', stock_qty: 10 }]
   );
@@ -40,7 +54,9 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ onClose, onSuc
   };
 
   const removeVariant = (index: number) => {
-    setVariants(variants.filter((_, i) => i !== index));
+    if (variants.length > 1) {
+      setVariants(variants.filter((_, i) => i !== index));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -54,10 +70,15 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ onClose, onSuc
         category: category
       };
 
+      // If no variants, create a default variant
+      const finalVariants = hasVariants 
+        ? variants 
+        : [{ size: 'Standard', color: 'Default', stock_qty: stockQty }];
+
       if (initialProduct) {
-        await api.updateProduct({ ...productData, id: initialProduct.id }, variants);
+        await api.updateProduct({ ...productData, id: initialProduct.id }, finalVariants);
       } else {
-        await api.addProduct(productData, variants);
+        await api.addProduct(productData, finalVariants);
       }
       onSuccess();
     } catch (err) {
@@ -123,51 +144,90 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ onClose, onSuc
             </div>
           </div>
 
-          <div>
-            <div className="flex justify-between items-center mb-2">
-              <label className="block text-sm font-medium text-gray-700">Variants (Size / Color)</label>
-              <button 
-                type="button"
-                onClick={handleAddVariant}
-                className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
-              >
-                <Plus size={16} /> Add Variant
-              </button>
-            </div>
-            
-            <div className="space-y-2">
-              {variants.map((variant, idx) => (
-                <div key={idx} className="flex gap-2 items-center bg-gray-50 p-2 rounded-lg border">
-                  <input 
-                    placeholder="Size"
-                    className="w-24 border rounded p-1 text-sm"
-                    value={variant.size}
-                    onChange={e => updateVariant(idx, 'size', e.target.value)}
-                  />
-                  <input 
-                    placeholder="Color"
-                    className="flex-1 border rounded p-1 text-sm"
-                    value={variant.color}
-                    onChange={e => updateVariant(idx, 'color', e.target.value)}
-                  />
-                  <input 
-                    type="number"
-                    placeholder="Qty"
-                    className="w-24 border rounded p-1 text-sm"
-                    value={variant.stock_qty}
-                    onChange={e => updateVariant(idx, 'stock_qty', parseInt(e.target.value) || 0)}
-                  />
-                  <button 
-                    type="button"
-                    onClick={() => removeVariant(idx)}
-                    className="text-red-500 hover:bg-red-100 p-1 rounded"
-                  >
-                    <Trash size={16} />
-                  </button>
-                </div>
-              ))}
-            </div>
+          {/* Variants Toggle */}
+          <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border">
+            <input
+              type="checkbox"
+              id="hasVariants"
+              checked={hasVariants}
+              onChange={(e) => setHasVariants(e.target.checked)}
+              className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+            />
+            <label htmlFor="hasVariants" className="text-sm font-medium text-gray-700 cursor-pointer">
+              This product has variants (size/color options)
+            </label>
           </div>
+
+          {/* Stock Quantity for Non-Variant Products */}
+          {!hasVariants && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Stock Quantity</label>
+              <input 
+                required
+                type="number"
+                min="0"
+                className="w-full border rounded-lg p-2"
+                value={stockQty}
+                onChange={e => setStockQty(parseInt(e.target.value) || 0)}
+              />
+              <p className="text-xs text-gray-500 mt-1">Total number of items in stock</p>
+            </div>
+          )}
+
+          {/* Variants Section */}
+          {hasVariants && (
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <label className="block text-sm font-medium text-gray-700">Variants (Size / Color)</label>
+                <button 
+                  type="button"
+                  onClick={handleAddVariant}
+                  className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                >
+                  <Plus size={16} /> Add Variant
+                </button>
+              </div>
+              
+              <div className="space-y-2">
+                {variants.map((variant, idx) => (
+                  <div key={idx} className="flex gap-2 items-center bg-gray-50 p-2 rounded-lg border">
+                    <input 
+                      required
+                      placeholder="Size"
+                      className="w-24 border rounded p-1 text-sm"
+                      value={variant.size}
+                      onChange={e => updateVariant(idx, 'size', e.target.value)}
+                    />
+                    <input 
+                      required
+                      placeholder="Color"
+                      className="flex-1 border rounded p-1 text-sm"
+                      value={variant.color}
+                      onChange={e => updateVariant(idx, 'color', e.target.value)}
+                    />
+                    <input 
+                      required
+                      type="number"
+                      min="0"
+                      placeholder="Qty"
+                      className="w-24 border rounded p-1 text-sm"
+                      value={variant.stock_qty}
+                      onChange={e => updateVariant(idx, 'stock_qty', parseInt(e.target.value) || 0)}
+                    />
+                    {variants.length > 1 && (
+                      <button 
+                        type="button"
+                        onClick={() => removeVariant(idx)}
+                        className="text-red-500 hover:bg-red-100 p-1 rounded"
+                      >
+                        <Trash size={16} />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </form>
 
         <div className="p-6 border-t bg-gray-50 flex justify-end gap-3 rounded-b-xl">

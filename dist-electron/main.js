@@ -418,6 +418,76 @@ app.whenReady().then(() => {
     const printers = await event.sender.getPrintersAsync();
     return printers.length > 0;
   });
+  ipcMain.handle("get-printers", async (event) => {
+    const printers = await event.sender.getPrintersAsync();
+    return printers;
+  });
+  ipcMain.handle("print-receipt", async (event, receiptData) => {
+    try {
+      const win2 = BrowserWindow.fromWebContents(event.sender);
+      if (!win2) return false;
+      const receiptHTML = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: 'Courier New', monospace; width: 300px; margin: 0; padding: 20px; }
+            .center { text-align: center; }
+            .bold { font-weight: bold; }
+            .line { border-top: 1px dashed #000; margin: 10px 0; }
+            table { width: 100%; }
+            td { padding: 2px 0; }
+            .right { text-align: right; }
+          </style>
+        </head>
+        <body>
+          <div class="center bold">${receiptData.storeName || "Clothing POS"}</div>
+          <div class="center">Receipt #${receiptData.receiptNumber}</div>
+          <div class="center">${new Date(receiptData.timestamp).toLocaleString()}</div>
+          <div class="line"></div>
+          <table>
+            ${receiptData.items.map((item) => `
+              <tr>
+                <td>${item.name}</td>
+                <td class="right">GH₵${item.price.toFixed(2)}</td>
+              </tr>
+              <tr>
+                <td style="padding-left: 10px; font-size: 0.9em;">${item.size}/${item.color} x${item.qty}</td>
+                <td></td>
+              </tr>
+            `).join("")}
+          </table>
+          <div class="line"></div>
+          <table>
+            <tr>
+              <td class="bold">TOTAL</td>
+              <td class="right bold">GH₵${receiptData.total.toFixed(2)}</td>
+            </tr>
+            <tr>
+              <td>Payment Method</td>
+              <td class="right">${receiptData.paymentMethod.toUpperCase()}</td>
+            </tr>
+          </table>
+          <div class="line"></div>
+          <div class="center">Thank you for your purchase!</div>
+        </body>
+        </html>
+      `;
+      await win2.webContents.print({
+        silent: false,
+        printBackground: true,
+        deviceName: receiptData.printerName || ""
+      }, (success, errorType) => {
+        if (!success) {
+          console.error("Print failed:", errorType);
+        }
+      });
+      return true;
+    } catch (error) {
+      console.error("Print error:", error);
+      return false;
+    }
+  });
   ipcMain.handle("db:validateUser", (_event, username, password) => {
     return db.validateUser(username, password);
   });

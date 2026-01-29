@@ -18,9 +18,12 @@ export const Settings: React.FC = () => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const [printers, setPrinters] = useState<any[]>([]);
+  const [testingPrint, setTestingPrint] = useState(false);
 
   useEffect(() => {
     loadSettings();
+    loadPrinters();
   }, []);
 
   const loadSettings = async () => {
@@ -38,6 +41,45 @@ export const Settings: React.FC = () => {
       console.error('Failed to load settings:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadPrinters = async () => {
+    try {
+      const availablePrinters = await api.getPrinters();
+      setPrinters(availablePrinters);
+    } catch (err) {
+      console.error('Failed to load printers:', err);
+    }
+  };
+
+  const handleTestPrint = async () => {
+    setTestingPrint(true);
+    try {
+      const receiptData = {
+        storeName: settings.storeName,
+        receiptNumber: 'TEST-' + Date.now(),
+        timestamp: new Date().toISOString(),
+        items: [
+          { name: 'Test Item 1', size: 'M', color: 'Blue', qty: 1, price: 50.00 },
+          { name: 'Test Item 2', size: 'L', color: 'Red', qty: 2, price: 75.00 }
+        ],
+        total: 200.00,
+        paymentMethod: 'cash',
+        printerName: settings.printerName
+      };
+      
+      const success = await api.printReceipt(receiptData);
+      if (success) {
+        alert('Test receipt sent to printer!');
+      } else {
+        alert('Failed to print test receipt');
+      }
+    } catch (err) {
+      console.error('Test print error:', err);
+      alert('Failed to print test receipt');
+    } finally {
+      setTestingPrint(false);
     }
   };
 
@@ -201,13 +243,25 @@ export const Settings: React.FC = () => {
                 value={settings.printerName}
                 onChange={e => setSettings({ ...settings, printerName: e.target.value })}
               >
-                <option value="Default Printer">Default Printer</option>
-                <option value="PDF Printer">Save as PDF</option>
+                <option value="">Default Printer</option>
+                {printers.map((printer) => (
+                  <option key={printer.name} value={printer.name}>
+                    {printer.displayName || printer.name}
+                  </option>
+                ))}
               </select>
+              {printers.length === 0 && (
+                <p className="text-xs text-gray-500 mt-1">No printers detected</p>
+              )}
             </div>
             <div className="flex items-end">
-              <button className="w-full border-2 border-dashed border-gray-300 rounded-lg p-2 text-gray-500 hover:bg-gray-50 transition-colors">
-                Test Print Receipt
+              <button 
+                type="button"
+                onClick={handleTestPrint}
+                disabled={testingPrint}
+                className="w-full bg-blue-600 text-white rounded-lg p-2 hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {testingPrint ? 'Printing...' : 'Test Print Receipt'}
               </button>
             </div>
           </div>

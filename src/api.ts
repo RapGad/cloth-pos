@@ -35,6 +35,14 @@ export const api = {
     return window.ipcRenderer.invoke('check-printer-status');
   },
 
+  getPrinters: (): Promise<any[]> => {
+    return window.ipcRenderer.invoke('get-printers');
+  },
+
+  printReceipt: (receiptData: any): Promise<boolean> => {
+    return window.ipcRenderer.invoke('print-receipt', receiptData);
+  },
+
   // User Authentication
   login: (username: string, password: string) =>
     window.ipcRenderer.invoke('db:validateUser', username, password),

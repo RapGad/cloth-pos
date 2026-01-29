@@ -110,6 +110,145 @@ app.whenReady().then(() => {
     return printers.length > 0
   })
 
+  ipcMain.handle('get-printers', async (event) => {
+    const printers = await event.sender.getPrintersAsync()
+    return printers
+  })
+
+  ipcMain.handle('print-receipt', async (_event, receiptData) => {
+    try {
+      // Create a hidden window for printing
+      const printWindow = new BrowserWindow({
+        show: false,
+        webPreferences: {
+          nodeIntegration: false,
+          contextIsolation: true
+        }
+      })
+
+      // Create receipt HTML
+      const receiptHTML = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <style>
+            @page {
+              size: 80mm auto;
+              margin: 0;
+            }
+            * {
+              margin: 0;
+              padding: 0;
+              box-sizing: border-box;
+            }
+            body { 
+              font-family: 'Courier New', monospace; 
+              width: 80mm;
+              padding: 10mm;
+              font-size: 12px;
+              line-height: 1.4;
+            }
+            .center { text-align: center; }
+            .bold { font-weight: bold; }
+            .line { 
+              border-top: 1px dashed #000; 
+              margin: 8px 0; 
+            }
+            table { 
+              width: 100%; 
+              border-collapse: collapse;
+            }
+            td { 
+              padding: 3px 0; 
+              vertical-align: top;
+            }
+            .right { text-align: right; }
+            .item-name { font-weight: bold; }
+            .item-details { 
+              font-size: 10px; 
+              color: #666;
+              padding-left: 10px;
+            }
+            .total-row td {
+              padding-top: 8px;
+              font-size: 14px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="center bold" style="font-size: 16px; margin-bottom: 5px;">${receiptData.storeName || 'Clothing POS'}</div>
+          <div class="center" style="margin-bottom: 3px;">Receipt #${receiptData.receiptNumber}</div>
+          <div class="center" style="font-size: 10px; margin-bottom: 8px;">${new Date(receiptData.timestamp).toLocaleString()}</div>
+          <div class="line"></div>
+          <table>
+            ${receiptData.items.map((item: any) => `
+              <tr>
+                <td class="item-name">${item.name}</td>
+                <td class="right">GH₵${(item.price * item.qty).toFixed(2)}</td>
+              </tr>
+              <tr>
+                <td class="item-details" colspan="2">${item.size}/${item.color} × ${item.qty} @ GH₵${item.price.toFixed(2)}</td>
+              </tr>
+            `).join('')}
+          </table>
+          <div class="line"></div>
+          <table>
+            <tr class="total-row">
+              <td class="bold">TOTAL</td>
+              <td class="right bold">GH₵${receiptData.total.toFixed(2)}</td>
+            </tr>
+            <tr>
+              <td>Payment</td>
+              <td class="right">${receiptData.paymentMethod.toUpperCase()}</td>
+            </tr>
+          </table>
+          <div class="line"></div>
+          <div class="center" style="margin-top: 10px; font-size: 11px;">Thank you for your purchase!</div>
+          <div class="center" style="font-size: 10px; margin-top: 5px;">Please come again</div>
+        </body>
+        </html>
+      `
+
+      // Load the HTML content
+      await printWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(receiptHTML)}`)
+
+      // Wait for content to load
+      await new Promise(resolve => setTimeout(resolve, 500))
+
+      // Print options
+      const printOptions: Electron.WebContentsPrintOptions = {
+        silent: true, // Don't show print dialog
+        printBackground: true,
+        margins: {
+          marginType: 'none'
+        }
+      }
+
+      // Add printer name if specified
+      if (receiptData.printerName) {
+        printOptions.deviceName = receiptData.printerName
+      }
+
+      // Print the receipt
+      return new Promise((resolve) => {
+        printWindow.webContents.print(printOptions, (success, errorType) => {
+          printWindow.close()
+          if (success) {
+            console.log('Receipt printed successfully')
+            resolve(true)
+          } else {
+            console.error('Print failed:', errorType)
+            resolve(false)
+          }
+        })
+      })
+    } catch (error) {
+      console.error('Print error:', error)
+      return false
+    }
+  })
+
   // User Authentication Handlers
   ipcMain.handle('db:validateUser', (_event, username, password) => {
     return db.validateUser(username, password)
