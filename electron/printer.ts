@@ -51,8 +51,8 @@ export const getUSBPrinters = () => {
       },
       isUSB: true
     }));
-  } catch (error) {
-    console.error('Error finding USB printers:', error);
+  } catch (error: any) {
+    console.warn('USB Printer discovery failed (ignore if using system printer):', error.message || error);
     return [];
   }
 };

@@ -40,7 +40,27 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ total, cart, onClo
         }))
       };
       console.log('Sending sale payload:', salePayload);
-      await api.processSale(salePayload);
+      const result = await api.processSale(salePayload);
+      
+      try {
+        await api.printReceipt({
+          receiptNumber: result.receipt_number,
+          timestamp: new Date().toISOString(),
+          customerName: 'Walk-in Customer', // TODO: Add customer selection
+          paymentMethod: paymentMethod,
+          total: total,
+          items: cart.map(item => ({
+            name: item.name,
+            size: item.size,
+            color: item.color,
+            qty: item.qty,
+            price: item.selling_price
+          }))
+        });
+      } catch (printError) {
+        console.error('Printing failed:', printError);
+        // Continue to success screen even if printing fails
+      }
       
       setIsSuccess(true);
       setTimeout(() => {

@@ -13,7 +13,7 @@ export const api = {
   deleteProduct: (id: number): Promise<void> => {
     return window.ipcRenderer.invoke('delete-product', id);
   },
-  processSale: (sale: any): Promise<number> => {
+  processSale: (sale: any): Promise<{ id: number, receipt_number: string }> => {
     return window.ipcRenderer.invoke('process-sale', sale);
   },
   getSettings: (): Promise<{ key: string, value: string }[]> => {

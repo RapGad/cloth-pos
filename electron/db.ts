@@ -337,7 +337,7 @@ export class DBManager {
         insertSaleItem.run({ ...item, sale_id: saleId });
         updateStock.run({ qty: item.qty, variant_id: item.variant_id });
       }
-      return saleId;
+      return { id: saleId, receipt_number: receiptNumber };
     });
 
     return transaction();

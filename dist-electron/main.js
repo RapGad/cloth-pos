@@ -1,12 +1,12 @@
 import { app, BrowserWindow, ipcMain } from "electron";
-import path from "node:path";
+import path$1 from "node:path";
 import { fileURLToPath } from "node:url";
 import Database from "better-sqlite3";
-import require$$1 from "path";
+import path from "path";
 class DBManager {
   db;
   constructor() {
-    const dbPath = require$$1.join(app.getPath("userData"), "cloth-pos.db");
+    const dbPath = path.join(app.getPath("userData"), "cloth-pos.db");
     this.db = new Database(dbPath);
     this.initSchema();
   }
@@ -281,7 +281,7 @@ class DBManager {
         insertSaleItem.run({ ...item, sale_id: saleId });
         updateStock.run({ qty: item.qty, variant_id: item.variant_id });
       }
-      return saleId;
+      return { id: saleId, receipt_number: receiptNumber };
     });
     return transaction();
   }
@@ -345,19 +345,19 @@ class DBManager {
 app.commandLine.appendSwitch("disable-features", "Autofill,PasswordManager,AutofillServerCommunication,AutofillAddressEnabled,AutofillCreditCardEnabled");
 app.commandLine.appendSwitch("disable-autofill");
 console.log("Autofill features disabled via command line switches");
-const __dirname$1 = path.dirname(fileURLToPath(import.meta.url));
-process.env.APP_ROOT = path.join(__dirname$1, "..");
+const __dirname$1 = path$1.dirname(fileURLToPath(import.meta.url));
+process.env.APP_ROOT = path$1.join(__dirname$1, "..");
 const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"];
-const MAIN_DIST = path.join(process.env.APP_ROOT, "dist-electron");
-const RENDERER_DIST = path.join(process.env.APP_ROOT, "dist");
-process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, "public") : RENDERER_DIST;
+const MAIN_DIST = path$1.join(process.env.APP_ROOT, "dist-electron");
+const RENDERER_DIST = path$1.join(process.env.APP_ROOT, "dist");
+process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path$1.join(process.env.APP_ROOT, "public") : RENDERER_DIST;
 let win;
 function createWindow() {
   win = new BrowserWindow({
     width: 1200,
     height: 800,
     webPreferences: {
-      preload: path.join(__dirname$1, "preload.mjs"),
+      preload: path$1.join(__dirname$1, "preload.mjs"),
       nodeIntegration: false,
       contextIsolation: true
     }
@@ -368,7 +368,7 @@ function createWindow() {
   if (VITE_DEV_SERVER_URL) {
     win.loadURL(VITE_DEV_SERVER_URL);
   } else {
-    win.loadFile(path.join(RENDERER_DIST, "index.html"));
+    win.loadFile(path$1.join(RENDERER_DIST, "index.html"));
   }
 }
 app.on("window-all-closed", () => {
@@ -418,12 +418,12 @@ app.whenReady().then(() => {
     return printers.length > 0;
   });
   ipcMain.handle("get-printers", async () => {
-    const { getAllPrinters } = await import("./printer-D7skKQ9T.js");
+    const { getAllPrinters } = await import("./printer-g3QAWT3L.js");
     return await getAllPrinters();
   });
   ipcMain.handle("print-receipt", async (_event, receiptData) => {
     try {
-      const { printReceipt } = await import("./printer-D7skKQ9T.js");
+      const { printReceipt } = await import("./printer-g3QAWT3L.js");
       const settingsData = db.getSettings();
       const settingsMap = {};
       settingsData.forEach((s) => {
