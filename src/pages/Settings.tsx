@@ -13,6 +13,8 @@ export const Settings: React.FC = () => {
     taxRate: '0',
     printerName: '',
     printerType: 'system',
+    storeAddress: '',
+    storePhone: '',
     printerPaperWidth: '80mm'
   });
   const [loading, setLoading] = useState(true);
@@ -36,6 +38,8 @@ export const Settings: React.FC = () => {
         if (s.key === 'printerName') newSettings.printerName = s.value;
         if (s.key === 'printerType') newSettings.printerType = s.value;
         if (s.key === 'printerPaperWidth') newSettings.printerPaperWidth = s.value;
+        if (s.key === 'storeAddress') newSettings.storeAddress = s.value;
+        if (s.key === 'storePhone') newSettings.storePhone = s.value;
       });
       setSettings(newSettings);
     } catch (err) {
@@ -93,6 +97,8 @@ export const Settings: React.FC = () => {
       await api.updateSetting('printerName', settings.printerName);
       await api.updateSetting('printerType', settings.printerType);
       await api.updateSetting('printerPaperWidth', settings.printerPaperWidth);
+      await api.updateSetting('storeAddress', settings.storeAddress);
+      await api.updateSetting('storePhone', settings.storePhone);
       alert('Settings saved successfully!');
     } catch (err) {
       console.error('Failed to save settings:', err);
@@ -141,6 +147,26 @@ export const Settings: React.FC = () => {
               className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none"
               value={settings.storeName}
               onChange={e => setSettings({ ...settings, storeName: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Store Address</label>
+            <input 
+              type="text" 
+              className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none"
+              value={settings.storeAddress}
+              onChange={e => setSettings({ ...settings, storeAddress: e.target.value })}
+              placeholder="e.g., 123 Fashion St, Accra"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Store Phone</label>
+            <input 
+              type="text" 
+              className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none"
+              value={settings.storePhone}
+              onChange={e => setSettings({ ...settings, storePhone: e.target.value })}
+              placeholder="e.g., +233 24 000 0000"
             />
           </div>
           <div>

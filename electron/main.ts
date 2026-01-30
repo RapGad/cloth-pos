@@ -144,6 +144,8 @@ app.whenReady().then(() => {
         receipt_footer: settingsMap.receiptFooter || 'Thank you for your purchase!'
       }
       
+      console.log(`Print receipt request: ${receiptData.receiptNumber}, Printer: ${printerSettings.printer_device_name}, Timestamp: ${receiptData.timestamp}, Address: ${printerSettings.store_address}`);
+      
       // Convert receipt data to expected format
       const saleData = {
         receipt_number: receiptData.receiptNumber,

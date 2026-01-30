@@ -434,12 +434,12 @@ app.whenReady().then(() => {
     return printers.length > 0;
   });
   ipcMain.handle("get-printers", async () => {
-    const { getAllPrinters } = await import("./printer-Jh2z-7Kh.js");
+    const { getAllPrinters } = await import("./printer-BRThy6Ta.js");
     return await getAllPrinters();
   });
   ipcMain.handle("print-receipt", async (_event, receiptData) => {
     try {
-      const { printReceipt } = await import("./printer-Jh2z-7Kh.js");
+      const { printReceipt } = await import("./printer-BRThy6Ta.js");
       const settingsData = db.getSettings();
       const settingsMap = {};
       settingsData.forEach((s) => {
@@ -455,6 +455,7 @@ app.whenReady().then(() => {
         currency_symbol: settingsMap.currency || "GH₵",
         receipt_footer: settingsMap.receiptFooter || "Thank you for your purchase!"
       };
+      console.log(`Print receipt request: ${receiptData.receiptNumber}, Printer: ${printerSettings.printer_device_name}, Timestamp: ${receiptData.timestamp}, Address: ${printerSettings.store_address}`);
       const saleData = {
         receipt_number: receiptData.receiptNumber,
         timestamp: receiptData.timestamp,

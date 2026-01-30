@@ -107,6 +107,33 @@ const generateBarcodeBase64 = async (text: string): Promise<string> => {
   });
 };
 
+// Helper to format date/time safely
+const formatReceiptDate = (dateStr: string | undefined): { date: string, time: string, full: string } => {
+  try {
+    const date = dateStr ? new Date(dateStr) : new Date();
+    if (isNaN(date.getTime())) {
+      const now = new Date();
+      return {
+        date: now.toLocaleDateString(),
+        time: now.toLocaleTimeString(),
+        full: now.toLocaleString()
+      };
+    }
+    return {
+      date: date.toLocaleDateString(),
+      time: date.toLocaleTimeString(),
+      full: date.toLocaleString()
+    };
+  } catch (e) {
+    const now = new Date();
+    return {
+      date: now.toLocaleDateString(),
+      time: now.toLocaleTimeString(),
+      full: now.toLocaleString()
+    };
+  }
+};
+
 // Generate HTML receipt
 export const generateReceiptHTML = async (sale: SaleData, settings: PrinterSettings): Promise<string> => {
   const is58mm = settings.printer_paper_width === '58mm';
@@ -115,7 +142,10 @@ export const generateReceiptHTML = async (sale: SaleData, settings: PrinterSetti
   
   const total = (sale.total_amount || sale.total || 0) / 100;
   const currencySymbol = settings.currency_symbol || 'GH₵';
-  const timestamp = sale.created_at || sale.timestamp || new Date().toISOString();
+  const timestamp = sale.created_at || sale.timestamp;
+  const formattedDates = formatReceiptDate(timestamp);
+
+  console.log(`Generating HTML Receipt: ${sale.receipt_number}, Raw Timestamp: ${timestamp}, Formatted: ${formattedDates.full}`);
 
   return `
 <!DOCTYPE html>
@@ -191,11 +221,11 @@ export const generateReceiptHTML = async (sale: SaleData, settings: PrinterSetti
   <table>
     <tr>
       <td>Date:</td>
-      <td class="right">${new Date(timestamp).toLocaleDateString()}</td>
+      <td class="right">${formattedDates.date}</td>
     </tr>
     <tr>
       <td>Time:</td>
-      <td class="right">${new Date(timestamp).toLocaleTimeString()}</td>
+      <td class="right">${formattedDates.time}</td>
     </tr>
     <tr>
       <td colspan="2">Receipt: ${sale.receipt_number}</td>
@@ -334,8 +364,11 @@ export const printViaUSB = async (sale: SaleData, settings: PrinterSettings): Pr
       const is58mm = settings.printer_paper_width === '58mm';
       const width = is58mm ? 32 : 48;
       const currencySymbol = settings.currency_symbol || 'GH₵';
-      const timestamp = sale.created_at || sale.timestamp || new Date().toISOString();
+      const timestamp = sale.created_at || sale.timestamp;
+      const formattedDates = formatReceiptDate(timestamp);
       const total = (sale.total_amount || sale.total || 0) / 100;
+
+      console.log(`Generating USB Receipt: ${sale.receipt_number}, Raw Timestamp: ${timestamp}, Formatted: ${formattedDates.full}`);
 
       // Helper function for two-column layout
       const twoColumns = (left: string, right: string) => {
@@ -368,7 +401,7 @@ export const printViaUSB = async (sale: SaleData, settings: PrinterSettings): Pr
             // Receipt info
             printer.align('LT');
             printer.text(`Receipt: ${sale.receipt_number}`);
-            printer.text(new Date(timestamp).toLocaleString());
+            printer.text(formattedDates.full);
             if (sale.customer_name) printer.text(`Customer: ${sale.customer_name}`);
             printer.text('-'.repeat(width));
             
