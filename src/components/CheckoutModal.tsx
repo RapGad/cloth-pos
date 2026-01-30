@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Banknote, CreditCard, Smartphone, CheckCircle } from 'lucide-react';
+import { X, Banknote, Smartphone, CheckCircle } from 'lucide-react';
 import { api } from '../api.ts';
 import type { CartItem } from '../shared/types.ts';
 
@@ -11,7 +11,7 @@ interface CheckoutModalProps {
 }
 
 export const CheckoutModal: React.FC<CheckoutModalProps> = ({ total, cart, onClose, onSuccess }) => {
-  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'mobile'>('cash');
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'mobile'>('cash');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
@@ -104,20 +104,13 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ total, cart, onClo
           </div>
 
           <p className="text-sm font-medium text-gray-700 mb-3">Select Payment Method</p>
-          <div className="grid grid-cols-3 gap-4 mb-8">
+          <div className="grid grid-cols-2 gap-4 mb-8">
             <button 
               onClick={() => setPaymentMethod('cash')}
               className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition-all ${paymentMethod === 'cash' ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-gray-200 hover:border-gray-300'}`}
             >
               <Banknote size={32} />
               <span className="font-medium">Cash</span>
-            </button>
-            <button 
-              onClick={() => setPaymentMethod('card')}
-              className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition-all ${paymentMethod === 'card' ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-gray-200 hover:border-gray-300'}`}
-            >
-              <CreditCard size={32} />
-              <span className="font-medium">Card</span>
             </button>
             <button 
               onClick={() => setPaymentMethod('mobile')}
