@@ -19,6 +19,7 @@ class DBManager {
         selling_price REAL NOT NULL,
         tax_rate REAL DEFAULT 0,
         category TEXT,
+        is_deleted INTEGER DEFAULT 0,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       );
 
@@ -85,6 +86,7 @@ class DBManager {
       { name: "selling_price", type: "REAL", default: "0" },
       { name: "tax_rate", type: "REAL", default: "0" },
       { name: "category", type: "TEXT" },
+      { name: "is_deleted", type: "INTEGER", default: "0" },
       { name: "created_at", type: "DATETIME", default: "CURRENT_TIMESTAMP" }
     ]);
     migrateTable("variants", [
@@ -156,7 +158,7 @@ class DBManager {
     }
   }
   getProducts() {
-    const products = this.db.prepare("SELECT * FROM products").all();
+    const products = this.db.prepare("SELECT * FROM products WHERE is_deleted = 0").all();
     return products.map((p) => {
       const variants = this.db.prepare("SELECT * FROM variants WHERE product_id = ?").all(p.id);
       return { ...p, variants };
@@ -236,7 +238,7 @@ class DBManager {
     stmt.run(qtyChange, variantId);
   }
   deleteProduct(productId) {
-    this.db.prepare("DELETE FROM products WHERE id = ?").run(productId);
+    this.db.prepare("UPDATE products SET is_deleted = 1 WHERE id = ?").run(productId);
   }
   getSettings() {
     return this.db.prepare("SELECT * FROM settings").all();
