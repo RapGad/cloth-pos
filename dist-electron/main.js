@@ -236,6 +236,18 @@ class DBManager {
     `;
     return this.db.prepare(query).all(startDate, endDate);
   }
+  getSalesTrend(startDate, endDate) {
+    const query = `
+      SELECT 
+        strftime('%Y-%m-%d', timestamp) as date,
+        SUM(total) as revenue
+      FROM sales
+      WHERE timestamp BETWEEN ? AND ?
+      GROUP BY date
+      ORDER BY date ASC
+    `;
+    return this.db.prepare(query).all(startDate, endDate);
+  }
   getSales(search) {
     let query = "SELECT * FROM sales";
     let params = [];
@@ -382,6 +394,7 @@ app.on("activate", () => {
   }
 });
 app.whenReady().then(() => {
+  createWindow();
   const db = new DBManager();
   ipcMain.handle("get-products", () => {
     return db.getProducts();
@@ -406,6 +419,9 @@ app.whenReady().then(() => {
   });
   ipcMain.handle("get-profit-report", (_event, startDate, endDate) => {
     return db.getProfitReport(startDate, endDate);
+  });
+  ipcMain.handle("get-sales-trend", (_event, startDate, endDate) => {
+    return db.getSalesTrend(startDate, endDate);
   });
   ipcMain.handle("get-sales", (_event, search) => {
     return db.getSales(search);
@@ -480,7 +496,6 @@ app.whenReady().then(() => {
   ipcMain.handle("db:changePassword", (_event, id, newPassword) => {
     return db.changePassword(id, newPassword);
   });
-  createWindow();
 });
 export {
   MAIN_DIST,

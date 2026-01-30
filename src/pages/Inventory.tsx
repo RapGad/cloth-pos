@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Trash2, Search, Edit2 } from 'lucide-react';
+import { Plus, Trash2, Search, Edit2, Download } from 'lucide-react';
 import { api } from '../api.ts';
 import type { ProductWithVariants } from '../shared/types.ts';
 import { AddProductModal } from '../components/AddProductModal.tsx';
 import { useAuth } from '../contexts/AuthContext.tsx';
 import { permissions } from '../utils/permissions.ts';
+import { Pagination } from '../components/Pagination.tsx';
+import { exportToCSV } from '../utils/csv.ts';
 
 export const Inventory: React.FC = () => {
   const { currentUser } = useAuth();
@@ -12,6 +14,10 @@ export const Inventory: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<ProductWithVariants | null>(null);
   const [search, setSearch] = useState('');
+  
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const canManage = permissions.canManageInventory(currentUser?.role);
 
@@ -23,6 +29,11 @@ export const Inventory: React.FC = () => {
   useEffect(() => {
     loadProducts();
   }, []);
+
+  // Reset to page 1 when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
 
   const handleDelete = async (id: number) => {
     if (confirm('Are you sure you want to delete this product?')) {
@@ -36,19 +47,56 @@ export const Inventory: React.FC = () => {
     p.category?.toLowerCase().includes(search.toLowerCase())
   );
 
+  // Pagination Logic
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  const paginatedProducts = filteredProducts.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const handleExport = () => {
+    const dataToExport = filteredProducts.map(p => {
+      const totalStock = p.variants.reduce((acc, v) => acc + v.stock_qty, 0);
+      const totalValue = totalStock * p.selling_price;
+      
+      return {
+        Name: p.name,
+        Category: p.category,
+        'Cost Price': p.cost_price,
+        'Selling Price': p.selling_price,
+        'Total Stock': totalStock,
+        'Stock Value': totalValue.toFixed(2),
+        'Variants': p.variants.map(v => `${v.size}/${v.color} (${v.stock_qty})`).join(', ')
+      };
+    });
+
+    exportToCSV(dataToExport, `inventory_export_${new Date().toISOString().split('T')[0]}`);
+  };
+
   return (
     <div className="p-8 h-full flex flex-col">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-800">Inventory</h1>
-        {canManage && (
-          <button 
-            onClick={() => setIsModalOpen(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition-colors"
-          >
-            <Plus size={20} />
-            Add Product
-          </button>
-        )}
+        <div className="flex gap-3">
+          {canManage && (
+            <>
+              <button 
+                onClick={handleExport}
+                className="bg-white border text-gray-700 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-gray-50 transition-colors"
+              >
+                <Download size={20} />
+                Export CSV
+              </button>
+              <button 
+                onClick={() => setIsModalOpen(true)}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition-colors"
+              >
+                <Plus size={20} />
+                Add Product
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       <div className="bg-white p-4 rounded-xl shadow-sm mb-6">
@@ -80,7 +128,7 @@ export const Inventory: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {filteredProducts.map(product => {
+              {paginatedProducts.map(product => {
                 const totalStock = product.variants.reduce((acc, v) => acc + v.stock_qty, 0);
                 const unitProfit = product.selling_price - product.cost_price;
                 const totalProfit = unitProfit * totalStock;
@@ -131,7 +179,7 @@ export const Inventory: React.FC = () => {
                   </tr>
                 );
               })}
-              {filteredProducts.length === 0 && (
+              {paginatedProducts.length === 0 && (
                 <tr>
                   <td colSpan={canManage ? 8 : 5} className="p-8 text-center text-gray-500">
                     No products found.
@@ -141,6 +189,13 @@ export const Inventory: React.FC = () => {
             </tbody>
           </table>
         </div>
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          itemsPerPage={itemsPerPage}
+          totalItems={filteredProducts.length}
+        />
       </div>
 
       {isModalOpen && canManage && (

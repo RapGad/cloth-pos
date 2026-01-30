@@ -71,9 +71,21 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ onClose, onSuc
       };
 
       // If no variants, create a default variant
-      const finalVariants = hasVariants 
-        ? variants 
-        : [{ size: 'Standard', color: 'Default', stock_qty: stockQty }];
+      let finalVariants = variants;
+      
+      if (!hasVariants) {
+        // Try to find existing default variant to preserve ID and avoid duplicates
+        const existingDefault = initialProduct?.variants.find(
+          v => v.size === 'Standard' && v.color === 'Default'
+        );
+
+        finalVariants = [{ 
+          id: existingDefault?.id, // Important: Preserve ID!
+          size: 'Standard', 
+          color: 'Default', 
+          stock_qty: stockQty 
+        }];
+      }
 
       if (initialProduct) {
         await api.updateProduct({ ...productData, id: initialProduct.id }, finalVariants);

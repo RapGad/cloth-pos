@@ -1,12 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { Search, Eye, X } from 'lucide-react';
+import { Search, Eye, X, Download } from 'lucide-react';
 import { api } from '../api.ts';
+import { Pagination } from '../components/Pagination.tsx';
+import { exportToCSV } from '../utils/csv.ts';
 
 export const Transactions: React.FC = () => {
   const [sales, setSales] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [selectedSale, setSelectedSale] = useState<any | null>(null);
   const [saleDetails, setSaleDetails] = useState<any[]>([]);
+  
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const loadSales = async () => {
     const data = await api.getSales(search || undefined);
@@ -17,25 +23,57 @@ export const Transactions: React.FC = () => {
     loadSales();
   }, [search]);
 
+  // Reset to page 1 when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
+
   const viewDetails = async (sale: any) => {
     const details = await api.getSaleDetails(sale.id);
     setSaleDetails(details);
     setSelectedSale(sale);
   };
 
+  // Pagination Logic
+  const totalPages = Math.ceil(sales.length / itemsPerPage);
+  const paginatedSales = sales.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const handleExport = () => {
+    const dataToExport = sales.map(sale => ({
+      'Receipt #': sale.receipt_number || sale.id, // Fallback to ID if receipt_number missing in summary
+      Date: new Date(sale.timestamp).toLocaleString(),
+      Method: sale.payment_method,
+      Total: sale.total.toFixed(2)
+    }));
+
+    exportToCSV(dataToExport, `transactions_export_${new Date().toISOString().split('T')[0]}`);
+  };
+
   return (
     <div className="p-8 h-full flex flex-col space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-gray-800">Transactions</h1>
-        <div className="relative w-72">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-          <input 
-            type="text" 
-            placeholder="Search receipt number..." 
-            className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
+        <div className="flex gap-3">
+          <div className="relative w-72">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+            <input 
+              type="text" 
+              placeholder="Search receipt number..." 
+              className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+          </div>
+          <button 
+            onClick={handleExport}
+            className="bg-white border text-gray-700 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-gray-50 transition-colors"
+          >
+            <Download size={20} />
+            Export CSV
+          </button>
         </div>
       </div>
 
@@ -52,7 +90,7 @@ export const Transactions: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {sales.map(sale => (
+              {paginatedSales.map(sale => (
                 <tr key={sale.id} className="hover:bg-gray-50">
                   <td className="p-4 font-medium">#{sale.id.toString().padStart(6, '0')}</td>
                   <td className="p-4 text-gray-500">{new Date(sale.timestamp).toLocaleString()}</td>
@@ -72,7 +110,7 @@ export const Transactions: React.FC = () => {
                   </td>
                 </tr>
               ))}
-              {sales.length === 0 && (
+              {paginatedSales.length === 0 && (
                 <tr>
                   <td colSpan={5} className="p-8 text-center text-gray-500">
                     No transactions found.
@@ -82,6 +120,13 @@ export const Transactions: React.FC = () => {
             </tbody>
           </table>
         </div>
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          itemsPerPage={itemsPerPage}
+          totalItems={sales.length}
+        />
       </div>
 
       {selectedSale && (

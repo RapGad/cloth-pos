@@ -281,6 +281,19 @@ export class DBManager {
     return this.db.prepare(query).all(startDate, endDate);
   }
 
+  public getSalesTrend(startDate: string, endDate: string) {
+    const query = `
+      SELECT 
+        strftime('%Y-%m-%d', timestamp) as date,
+        SUM(total) as revenue
+      FROM sales
+      WHERE timestamp BETWEEN ? AND ?
+      GROUP BY date
+      ORDER BY date ASC
+    `;
+    return this.db.prepare(query).all(startDate, endDate);
+  }
+
   public getSales(search?: string) {
     let query = 'SELECT * FROM sales';
     let params: any[] = [];

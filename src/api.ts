@@ -25,6 +25,9 @@ export const api = {
   getProfitReport: (startDate: string, endDate: string): Promise<any[]> => {
     return window.ipcRenderer.invoke('get-profit-report', startDate, endDate);
   },
+  getSalesTrend: (startDate: string, endDate: string): Promise<any[]> => {
+    return window.ipcRenderer.invoke('get-sales-trend', startDate, endDate);
+  },
   getSales: (search?: string): Promise<any[]> => {
     return window.ipcRenderer.invoke('get-sales', search);
   },

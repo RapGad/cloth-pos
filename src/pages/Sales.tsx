@@ -28,9 +28,7 @@ export const Sales: React.FC = () => {
     );
   }, [products, search]);
 
-  const addToCart = (variantId: number, size: string, color: string, _price: number) => {
-    if (!selectedProduct) return;
-
+  const addToCart = (product: ProductWithVariants, variantId: number, size: string, color: string, _price: number) => {
     setCart(prev => {
       const existing = prev.find(item => item.variantId === variantId);
       if (existing) {
@@ -42,12 +40,12 @@ export const Sales: React.FC = () => {
       }
       return [...prev, {
         variantId,
-        productId: selectedProduct.id,
-        name: selectedProduct.name,
+        productId: product.id,
+        name: product.name,
         size,
         color,
-        cost_price: selectedProduct.cost_price,
-        selling_price: selectedProduct.selling_price,
+        cost_price: product.cost_price,
+        selling_price: product.selling_price,
         qty: 1,
         discount: 0
       }];
@@ -114,7 +112,16 @@ export const Sales: React.FC = () => {
                     <tr 
                       key={product.id} 
                       className="hover:bg-blue-50/50 transition-colors group cursor-pointer"
-                      onClick={() => setSelectedProduct(product)}
+                      onClick={() => {
+                        // Check if product has only the default variant
+                        if (product.variants.length === 1 && 
+                            product.variants[0].size === 'Standard' && 
+                            product.variants[0].color === 'Default') {
+                          addToCart(product, product.variants[0].id, 'Standard', 'Default', product.selling_price);
+                        } else {
+                          setSelectedProduct(product);
+                        }
+                      }}
                     >
                       <td className="p-4">
                         <div className="font-bold text-gray-800">{product.name}</div>
@@ -137,7 +144,14 @@ export const Sales: React.FC = () => {
                           className="bg-blue-600 text-white p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
                           onClick={(e) => {
                             e.stopPropagation();
-                            setSelectedProduct(product);
+                            // Same logic for the plus button
+                            if (product.variants.length === 1 && 
+                                product.variants[0].size === 'Standard' && 
+                                product.variants[0].color === 'Default') {
+                              addToCart(product, product.variants[0].id, 'Standard', 'Default', product.selling_price);
+                            } else {
+                              setSelectedProduct(product);
+                            }
                           }}
                         >
                           <Plus size={18} />
@@ -181,7 +195,10 @@ export const Sales: React.FC = () => {
               <div key={item.variantId} className="flex justify-between items-center bg-gray-50 p-3 rounded-lg border">
                 <div>
                   <h4 className="font-medium text-sm">{item.name}</h4>
-                  <p className="text-xs text-gray-500">{item.size} / {item.color}</p>
+                  {/* Hide variant text if it's the default one */}
+                  {!(item.size === 'Standard' && item.color === 'Default') && (
+                    <p className="text-xs text-gray-500">{item.size} / {item.color}</p>
+                  )}
                   <p className="text-sm font-bold text-blue-600">GH₵{(item.selling_price * item.qty).toFixed(2)}</p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -223,7 +240,7 @@ export const Sales: React.FC = () => {
         <VariantSelectorModal 
           product={selectedProduct} 
           onClose={() => setSelectedProduct(null)}
-          onSelect={addToCart}
+          onSelect={(variantId, size, color, price) => addToCart(selectedProduct, variantId, size, color, price)}
         />
       )}
 

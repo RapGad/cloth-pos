@@ -63,6 +63,8 @@ app.on('activate', () => {
 })
 
 app.whenReady().then(() => {
+  createWindow() // Create window first for perceived speed
+
   const db = new DBManager()
 
   ipcMain.handle('get-products', () => {
@@ -95,6 +97,10 @@ app.whenReady().then(() => {
 
   ipcMain.handle('get-profit-report', (_event, startDate, endDate) => {
     return db.getProfitReport(startDate, endDate)
+  })
+
+  ipcMain.handle('get-sales-trend', (_event, startDate, endDate) => {
+    return db.getSalesTrend(startDate, endDate)
   })
 
   ipcMain.handle('get-sales', (_event, search) => {
@@ -186,6 +192,4 @@ app.whenReady().then(() => {
   ipcMain.handle('db:changePassword', (_event, id, newPassword) => {
     return db.changePassword(id, newPassword)
   })
-
-  createWindow()
 })

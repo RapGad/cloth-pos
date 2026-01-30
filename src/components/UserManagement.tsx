@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Plus, Edit2, Trash2, X, Key } from 'lucide-react';
+import { Users, Plus, Edit2, Trash2, X } from 'lucide-react';
 import { api } from '../api';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -16,11 +16,9 @@ export const UserManagement: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [formData, setFormData] = useState({ username: '', password: '', role: 'cashier' as 'admin' | 'cashier' });
-  const [newPassword, setNewPassword] = useState('');
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -57,27 +55,18 @@ export const UserManagement: React.FC = () => {
     setError('');
     try {
       await api.updateUser(selectedUser.id, formData.username, formData.role);
+      
+      // If password was provided, update it too
+      if (formData.password) {
+        await api.changePassword(selectedUser.id, formData.password);
+      }
+
       setShowEditModal(false);
       setSelectedUser(null);
       setFormData({ username: '', password: '', role: 'cashier' });
       loadUsers();
     } catch (err: any) {
       setError(err.message || 'Failed to update user');
-    }
-  };
-
-  const handleChangePassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedUser) return;
-    setError('');
-    try {
-      await api.changePassword(selectedUser.id, newPassword);
-      setShowPasswordModal(false);
-      setSelectedUser(null);
-      setNewPassword('');
-      alert('Password changed successfully!');
-    } catch (err: any) {
-      setError(err.message || 'Failed to change password');
     }
   };
 
@@ -98,12 +87,6 @@ export const UserManagement: React.FC = () => {
     setSelectedUser(user);
     setFormData({ username: user.username, password: '', role: user.role });
     setShowEditModal(true);
-  };
-
-  const openPasswordModal = (user: User) => {
-    setSelectedUser(user);
-    setNewPassword('');
-    setShowPasswordModal(true);
   };
 
   const openDeleteModal = (user: User) => {
@@ -173,13 +156,6 @@ export const UserManagement: React.FC = () => {
                       title="Edit user"
                     >
                       <Edit2 size={16} />
-                    </button>
-                    <button
-                      onClick={() => openPasswordModal(user)}
-                      className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                      title="Change password"
-                    >
-                      <Key size={16} />
                     </button>
                     <button
                       onClick={() => openDeleteModal(user)}
@@ -268,6 +244,17 @@ export const UserManagement: React.FC = () => {
               />
             </div>
             <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">New Password (optional)</label>
+              <input
+                type="password"
+                minLength={6}
+                className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                placeholder="Leave blank to keep current"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              />
+            </div>
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
               <select
                 className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none"
@@ -278,52 +265,17 @@ export const UserManagement: React.FC = () => {
                 <option value="admin">Admin</option>
               </select>
             </div>
-            <div className="flex gap-2 pt-2">
+            <div className="flex gap-2 pt-4 border-t mt-4 flex-row-reverse">
               <button
                 type="submit"
-                className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
               >
                 Save Changes
               </button>
               <button
                 type="button"
                 onClick={() => setShowEditModal(false)}
-                className="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg hover:bg-gray-300 transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        </Modal>
-      )}
-
-      {/* Change Password Modal */}
-      {showPasswordModal && selectedUser && (
-        <Modal title={`Change Password for ${selectedUser.username}`} onClose={() => setShowPasswordModal(false)}>
-          <form onSubmit={handleChangePassword} className="space-y-4">
-            {error && <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm">{error}</div>}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
-              <input
-                type="password"
-                required
-                minLength={6}
-                className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-              />
-            </div>
-            <div className="flex gap-2 pt-2">
-              <button
-                type="submit"
-                className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition-colors"
-              >
-                Change Password
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowPasswordModal(false)}
-                className="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg hover:bg-gray-300 transition-colors"
+                className="flex-1 bg-gray-100 text-gray-700 py-2 rounded-lg hover:bg-gray-200 transition-colors font-medium"
               >
                 Cancel
               </button>
