@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Trash2, Search, Edit2, Download } from 'lucide-react';
+import { Plus, Trash2, Search, Edit2, Download, Upload } from 'lucide-react';
 import { api } from '../api.ts';
 import type { ProductWithVariants } from '../shared/types.ts';
 import { AddProductModal } from '../components/AddProductModal.tsx';
@@ -7,6 +7,7 @@ import { useAuth } from '../contexts/AuthContext.tsx';
 import { permissions } from '../utils/permissions.ts';
 import { Pagination } from '../components/Pagination.tsx';
 import { exportToCSV } from '../utils/csv.ts';
+import { parseFile } from '../utils/fileParsing.ts';
 
 export const Inventory: React.FC = () => {
   const { currentUser } = useAuth();
@@ -73,6 +74,31 @@ export const Inventory: React.FC = () => {
     exportToCSV(dataToExport, `inventory_export_${new Date().toISOString().split('T')[0]}`);
   };
 
+  const handleBulkUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const parsedData = await parseFile(file);
+      if (parsedData.length === 0) {
+        alert('No valid products found in the file.');
+        return;
+      }
+
+      if (confirm(`Are you sure you want to upload ${parsedData.length} products?`)) {
+        await api.addProductsBulk(parsedData);
+        alert('Bulk upload successful!');
+        loadProducts();
+      }
+    } catch (err) {
+      console.error('Bulk upload error:', err);
+      alert('Failed to process file. Please ensure it follows the correct format.');
+    } finally {
+      // Clear input so same file can be selected again
+      e.target.value = '';
+    }
+  };
+
   return (
     <div className="p-8 h-full flex flex-col">
       <div className="flex justify-between items-center mb-6">
@@ -83,10 +109,26 @@ export const Inventory: React.FC = () => {
               <button 
                 onClick={handleExport}
                 className="bg-white border text-gray-700 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-gray-50 transition-colors"
+                title="Export current view to CSV"
               >
                 <Download size={20} />
                 Export CSV
               </button>
+              <button 
+                onClick={() => document.getElementById('bulk-upload-input')?.click()}
+                className="bg-white border text-gray-700 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-gray-50 transition-colors"
+                title="Bulk upload products from CSV or Excel"
+              >
+                <Upload size={20} />
+                Bulk Upload
+              </button>
+              <input 
+                id="bulk-upload-input"
+                type="file"
+                accept=".csv,.xlsx,.xls"
+                className="hidden"
+                onChange={handleBulkUpload}
+              />
               <button 
                 onClick={() => setIsModalOpen(true)}
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition-colors"

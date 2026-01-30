@@ -214,6 +214,33 @@ export class DBManager {
     return transaction();
   }
 
+  public addProductsBulk(productsWithVariants: { product: any, variants: any[] }[]) {
+    const insertProduct = this.db.prepare(`
+      INSERT INTO products (name, cost_price, selling_price, tax_rate, category)
+      VALUES (@name, @cost_price, @selling_price, @tax_rate, @category)
+    `);
+
+    const insertVariant = this.db.prepare(`
+      INSERT INTO variants (product_id, size, color, stock_qty)
+      VALUES (@product_id, @size, @color, @stock_qty)
+    `);
+
+    const transaction = this.db.transaction(() => {
+      let count = 0;
+      for (const item of productsWithVariants) {
+        const info = insertProduct.run(item.product);
+        const productId = info.lastInsertRowid;
+        for (const v of item.variants) {
+          insertVariant.run({ ...v, product_id: productId });
+        }
+        count++;
+      }
+      return count;
+    });
+
+    return transaction();
+  }
+
   public updateProduct(product: any, variants: any[]) {
     const updateProduct = this.db.prepare(`
       UPDATE products 

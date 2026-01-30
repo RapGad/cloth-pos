@@ -75,6 +75,10 @@ app.whenReady().then(() => {
     return db.addProduct(product, variants)
   })
 
+  ipcMain.handle('add-products-bulk', (_event, productsWithVariants) => {
+    return db.addProductsBulk(productsWithVariants)
+  })
+
   ipcMain.handle('update-product', (_event, product, variants) => {
     return db.updateProduct(product, variants)
   })

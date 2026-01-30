@@ -7,6 +7,9 @@ export const api = {
   addProduct: (product: any, variants: any[]): Promise<number> => {
     return window.ipcRenderer.invoke('add-product', product, variants);
   },
+  addProductsBulk: (productsWithVariants: any[]): Promise<number> => {
+    return window.ipcRenderer.invoke('add-products-bulk', productsWithVariants);
+  },
   updateProduct: (product: any, variants: any[]): Promise<void> => {
     return window.ipcRenderer.invoke('update-product', product, variants);
   },

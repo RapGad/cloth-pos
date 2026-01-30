@@ -181,6 +181,29 @@ class DBManager {
     });
     return transaction();
   }
+  addProductsBulk(productsWithVariants) {
+    const insertProduct = this.db.prepare(`
+      INSERT INTO products (name, cost_price, selling_price, tax_rate, category)
+      VALUES (@name, @cost_price, @selling_price, @tax_rate, @category)
+    `);
+    const insertVariant = this.db.prepare(`
+      INSERT INTO variants (product_id, size, color, stock_qty)
+      VALUES (@product_id, @size, @color, @stock_qty)
+    `);
+    const transaction = this.db.transaction(() => {
+      let count = 0;
+      for (const item of productsWithVariants) {
+        const info = insertProduct.run(item.product);
+        const productId = info.lastInsertRowid;
+        for (const v of item.variants) {
+          insertVariant.run({ ...v, product_id: productId });
+        }
+        count++;
+      }
+      return count;
+    });
+    return transaction();
+  }
   updateProduct(product, variants) {
     const updateProduct = this.db.prepare(`
       UPDATE products 
@@ -401,6 +424,9 @@ app.whenReady().then(() => {
   });
   ipcMain.handle("add-product", (_event, product, variants) => {
     return db.addProduct(product, variants);
+  });
+  ipcMain.handle("add-products-bulk", (_event, productsWithVariants) => {
+    return db.addProductsBulk(productsWithVariants);
   });
   ipcMain.handle("update-product", (_event, product, variants) => {
     return db.updateProduct(product, variants);
