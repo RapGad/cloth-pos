@@ -378,6 +378,17 @@ class DBManager {
       WHERE id = ?
     `).run(newPassword, id);
   }
+  resetDatabase() {
+    this.db.transaction(() => {
+      this.db.exec("DELETE FROM sale_items");
+      this.db.exec("DELETE FROM sales");
+      this.db.exec("DELETE FROM variants");
+      this.db.exec("DELETE FROM products");
+      this.db.exec("DELETE FROM users WHERE role != 'admin'");
+      this.db.exec("DELETE FROM sqlite_sequence WHERE name IN ('sale_items', 'sales', 'variants', 'products', 'users')");
+    })();
+    this.db.exec("VACUUM");
+  }
 }
 app.commandLine.appendSwitch("disable-features", "Autofill,PasswordManager,AutofillServerCommunication,AutofillAddressEnabled,AutofillCreditCardEnabled");
 app.commandLine.appendSwitch("disable-autofill");
@@ -525,6 +536,9 @@ app.whenReady().then(() => {
   });
   ipcMain.handle("db:changePassword", (_event, id, newPassword) => {
     return db.changePassword(id, newPassword);
+  });
+  ipcMain.handle("reset-database", () => {
+    return db.resetDatabase();
   });
 });
 export {

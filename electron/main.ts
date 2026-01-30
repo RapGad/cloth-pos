@@ -199,4 +199,8 @@ app.whenReady().then(() => {
   ipcMain.handle('db:changePassword', (_event, id, newPassword) => {
     return db.changePassword(id, newPassword)
   })
+
+  ipcMain.handle('reset-database', () => {
+    return db.resetDatabase()
+  })
 })

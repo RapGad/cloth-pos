@@ -67,4 +67,7 @@ export const api = {
   
   changePassword: (id: number, newPassword: string) =>
     window.ipcRenderer.invoke('db:changePassword', id, newPassword),
+  
+  resetDatabase: () =>
+    window.ipcRenderer.invoke('reset-database'),
 };

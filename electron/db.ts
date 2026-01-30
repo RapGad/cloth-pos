@@ -450,4 +450,21 @@ export class DBManager {
       WHERE id = ?
     `).run(newPassword, id);
   }
+
+  public resetDatabase() {
+    this.db.transaction(() => {
+      // Clear data but preserve admin users
+      this.db.exec('DELETE FROM sale_items');
+      this.db.exec('DELETE FROM sales');
+      this.db.exec('DELETE FROM variants');
+      this.db.exec('DELETE FROM products');
+      this.db.exec("DELETE FROM users WHERE role != 'admin'");
+      
+      // Reset auto-increment counters
+      this.db.exec("DELETE FROM sqlite_sequence WHERE name IN ('sale_items', 'sales', 'variants', 'products', 'users')");
+    })();
+
+    // Reclaim space (must be outside transaction)
+    this.db.exec('VACUUM');
+  }
 }
