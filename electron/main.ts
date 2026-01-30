@@ -160,6 +160,7 @@ app.whenReady().then(() => {
         }))
       }
       
+      console.log(`Print receipt request: ${receiptData.receiptNumber}, Printer: ${printerSettings.printer_device_name}, Type: ${printerSettings.printer_type}`);
       await printReceipt(saleData, printerSettings)
       return true
     } catch (error) {

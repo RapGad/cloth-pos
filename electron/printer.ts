@@ -262,6 +262,8 @@ export const printViaWebContents = async (html: string, printerName: string, set
   const widthMicrons = is58mm ? 58000 : 80000;
   const heightMicrons = 300000;
 
+  console.log(`Print attempt - Target Printer: "${printerName || 'Default'}", Width: ${settings.printer_paper_width}`);
+
   return new Promise((resolve, reject) => {
     const workerWindow = new BrowserWindow({
       show: false,
@@ -273,26 +275,46 @@ export const printViaWebContents = async (html: string, printerName: string, set
 
     workerWindow.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html));
 
-    workerWindow.webContents.on('did-finish-load', () => {
-      setTimeout(() => {
-        workerWindow.webContents.print({
-          silent: true,
-          printBackground: true,
-          deviceName: printerName || undefined,
-          margins: { marginType: 'none' },
-          pageSize: {
-            width: widthMicrons,
-            height: heightMicrons
+    workerWindow.webContents.on('did-finish-load', async () => {
+      try {
+        // Validate printer name
+        let finalPrinterName = printerName;
+        if (printerName) {
+          const availablePrinters = await workerWindow.webContents.getPrintersAsync();
+          const printerExists = availablePrinters.some(p => p.name === printerName);
+          
+          if (!printerExists) {
+            console.warn(`Printer "${printerName}" not found. Falling back to default printer.`);
+            finalPrinterName = ''; // Empty string lets Electron use the default printer
           }
-        }, (success, errorType) => {
-          workerWindow.close();
-          if (!success) {
-            reject(new Error(`Print failed: ${errorType}`));
-          } else {
-            resolve(true);
-          }
-        });
-      }, 500);
+        }
+
+        setTimeout(() => {
+          workerWindow.webContents.print({
+            silent: true,
+            printBackground: true,
+            deviceName: finalPrinterName || undefined,
+            margins: { marginType: 'none' },
+            pageSize: {
+              width: widthMicrons,
+              height: heightMicrons
+            }
+          }, (success, errorType) => {
+            workerWindow.close();
+            if (!success) {
+              console.error(`Print failed. Printer: "${finalPrinterName || 'Default'}", Error: ${errorType}`);
+              reject(new Error(`Print failed: ${errorType}`));
+            } else {
+              console.log('Print job sent successfully');
+              resolve(true);
+            }
+          });
+        }, 500);
+      } catch (err: any) {
+        workerWindow.close();
+        console.error('Error during printer validation:', err);
+        reject(err);
+      }
     });
 
     workerWindow.webContents.on('did-fail-load', () => {

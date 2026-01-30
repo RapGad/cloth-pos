@@ -434,12 +434,12 @@ app.whenReady().then(() => {
     return printers.length > 0;
   });
   ipcMain.handle("get-printers", async () => {
-    const { getAllPrinters } = await import("./printer-g3QAWT3L.js");
+    const { getAllPrinters } = await import("./printer-Jh2z-7Kh.js");
     return await getAllPrinters();
   });
   ipcMain.handle("print-receipt", async (_event, receiptData) => {
     try {
-      const { printReceipt } = await import("./printer-g3QAWT3L.js");
+      const { printReceipt } = await import("./printer-Jh2z-7Kh.js");
       const settingsData = db.getSettings();
       const settingsMap = {};
       settingsData.forEach((s) => {
@@ -471,6 +471,7 @@ app.whenReady().then(() => {
           // Convert to cents
         }))
       };
+      console.log(`Print receipt request: ${receiptData.receiptNumber}, Printer: ${printerSettings.printer_device_name}, Type: ${printerSettings.printer_type}`);
       await printReceipt(saleData, printerSettings);
       return true;
     } catch (error) {
