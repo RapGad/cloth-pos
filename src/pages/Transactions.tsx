@@ -93,7 +93,7 @@ export const Transactions: React.FC = () => {
             <tbody className="divide-y">
               {paginatedSales.map(sale => (
                 <tr key={sale.id} className="hover:bg-gray-50">
-                  <td className="p-4 font-medium">#{sale.id.toString().padStart(6, '0')}</td>
+                  <td className="p-4 font-mono font-medium text-sm">{sale.receipt_number}</td>
                   <td className="p-4 text-gray-500">{new Date(sale.timestamp).toLocaleString()}</td>
                   <td className="p-4 text-gray-700 font-medium text-sm">{sale.customer_name || 'Walk-in Customer'}</td>
                   <td className="p-4">
@@ -135,7 +135,7 @@ export const Transactions: React.FC = () => {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-lg flex flex-col max-h-[80vh]">
             <div className="p-6 border-b flex justify-between items-center">
-              <h2 className="text-xl font-bold">Sale Details #{selectedSale.id.toString().padStart(6, '0')}</h2>
+              <h2 className="text-xl font-bold">Receipt {selectedSale.receipt_number}</h2>
               <button onClick={() => setSelectedSale(null)} className="text-gray-500 hover:text-gray-700">
                 <X size={24} />
               </button>

@@ -14,13 +14,18 @@ export const Reports: React.FC = () => {
 
     if (dateRange === 'today') {
       start.setHours(0, 0, 0, 0);
+      end.setHours(23, 59, 59, 999);
     } else if (dateRange === 'week') {
       start.setDate(end.getDate() - 7);
+      start.setHours(0, 0, 0, 0);
     } else if (dateRange === 'month') {
       start.setMonth(end.getMonth() - 1);
+      start.setHours(0, 0, 0, 0);
     } else if (dateRange === 'custom' && customStart && customEnd) {
       start = new Date(customStart);
+      start.setHours(0, 0, 0, 0);
       end = new Date(customEnd);
+      end.setHours(23, 59, 59, 999);
     }
 
     const data = await api.getProfitReport(start.toISOString(), end.toISOString());

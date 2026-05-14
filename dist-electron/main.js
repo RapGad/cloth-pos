@@ -263,7 +263,7 @@ class DBManager {
       JOIN sale_items si ON s.id = si.sale_id
       JOIN variants v ON si.variant_id = v.id
       JOIN products p ON v.product_id = p.id
-      WHERE s.timestamp BETWEEN ? AND ?
+      WHERE datetime(s.timestamp) BETWEEN datetime(?) AND datetime(?)
       GROUP BY p.category
     `;
     return this.db.prepare(query).all(startDate, endDate);
@@ -274,7 +274,7 @@ class DBManager {
         strftime('%Y-%m-%d', timestamp) as date,
         SUM(total) as revenue
       FROM sales
-      WHERE timestamp BETWEEN ? AND ?
+      WHERE datetime(timestamp) BETWEEN datetime(?) AND datetime(?)
       GROUP BY date
       ORDER BY date ASC
     `;
