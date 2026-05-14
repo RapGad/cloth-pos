@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build && electron-builder",
+    "build:win": "tsc -b && vite build && electron-builder --win",
     "lint": "eslint .",
     "preview": "vite preview",
     "postinstall": "electron-builder install-app-deps"
@@ -50,8 +51,8 @@
     "vite-plugin-electron-renderer": "^0.14.6"
   },
   "build": {
-    "appId": "com.clothingpos.app",
-    "productName": "Clothing POS",
+    "appId": "com.reggipos.app",
+    "productName": "Reggie POS",
     "directories": {
       "output": "release/${version}"
     },
@@ -63,7 +64,11 @@
       "target": "dmg"
     },
     "win": {
-      "target": "nsis"
+      "target": [
+        { "target": "nsis", "arch": ["x64"] },
+        { "target": "portable", "arch": ["x64"] }
+      ],
+      "icon": "public/vite.svg"
     },
     "linux": {
       "target": "AppImage"
