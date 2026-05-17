@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { TrendingUp, ShoppingBag, AlertTriangle, Calendar, PieChart, Package } from 'lucide-react';
 import { api } from '../api.ts';
+import { useAuth } from '../contexts/AuthContext.tsx';
 
 export const Home: React.FC = () => {
+  const { currentUser } = useAuth();
+  const isAdmin = currentUser?.role === 'admin';
   const [report, setReport] = useState<any[]>([]);
   const [trend, setTrend] = useState<any[]>([]);
   const [stats, setStats] = useState({
@@ -104,27 +107,31 @@ export const Home: React.FC = () => {
           <p className="text-sm text-gray-500 mt-2">Total revenue for selected period</p>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
-              <Package size={24} />
+        {isAdmin && (
+          <>
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
+                  <Package size={24} />
+                </div>
+                <h3 className="text-gray-500 font-medium">Inventory Values</h3>
+              </div>
+              <p className="text-3xl font-bold text-indigo-600">GH₵{stats.inventoryValue?.toFixed(2) || '0.00'}</p>
+              <p className="text-sm text-gray-500 mt-2">Total value of stock on hand</p>
             </div>
-            <h3 className="text-gray-500 font-medium">Inventory Values</h3>
-          </div>
-          <p className="text-3xl font-bold text-indigo-600">GH₵{stats.inventoryValue?.toFixed(2) || '0.00'}</p>
-          <p className="text-sm text-gray-500 mt-2">Total value of stock on hand</p>
-        </div>
 
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="p-3 bg-green-50 text-green-600 rounded-xl">
-              <TrendingUp size={24} />
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="p-3 bg-green-50 text-green-600 rounded-xl">
+                  <TrendingUp size={24} />
+                </div>
+                <h3 className="text-gray-500 font-medium">Net Profit</h3>
+              </div>
+              <p className="text-3xl font-bold text-green-600">GH₵{totalProfit.toFixed(2)}</p>
+              <p className="text-sm text-gray-500 mt-2">Total profit after costs</p>
             </div>
-            <h3 className="text-gray-500 font-medium">Net Profit</h3>
-          </div>
-          <p className="text-3xl font-bold text-green-600">GH₵{totalProfit.toFixed(2)}</p>
-          <p className="text-sm text-gray-500 mt-2">Total profit after costs</p>
-        </div>
+          </>
+        )}
 
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col max-h-48">
           <div className="flex items-center justify-between mb-4">
@@ -153,34 +160,36 @@ export const Home: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-          <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
-            <PieChart size={20} className="text-blue-600" />
-            Profit by Category
-          </h3>
-          <div className="space-y-4">
-            {report.map((item) => (
-              <div key={item.category} className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="font-medium text-gray-700">{item.category || 'General'}</span>
-                  <span className="font-bold text-gray-900">GH₵{item.profit.toFixed(2)}</span>
+      <div className={`grid grid-cols-1 ${isAdmin ? 'lg:grid-cols-2' : ''} gap-6`}>
+        {isAdmin && (
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
+              <PieChart size={20} className="text-blue-600" />
+              Profit by Category
+            </h3>
+            <div className="space-y-4">
+              {report.map((item) => (
+                <div key={item.category} className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="font-medium text-gray-700">{item.category || 'General'}</span>
+                    <span className="font-bold text-gray-900">GH₵{item.profit.toFixed(2)}</span>
+                  </div>
+                  <div className="w-full bg-gray-100 rounded-full h-2">
+                    <div 
+                      className="bg-blue-600 h-2 rounded-full" 
+                      style={{ width: `${Math.min(100, (item.profit / (totalProfit || 1)) * 100)}%` }}
+                    />
+                  </div>
                 </div>
-                <div className="w-full bg-gray-100 rounded-full h-2">
-                  <div 
-                    className="bg-blue-600 h-2 rounded-full" 
-                    style={{ width: `${Math.min(100, (item.profit / (totalProfit || 1)) * 100)}%` }}
-                  />
+              ))}
+              {report.length === 0 && (
+                <div className="text-center py-10 text-gray-400">
+                  No sales data for this period
                 </div>
-              </div>
-            ))}
-            {report.length === 0 && (
-              <div className="text-center py-10 text-gray-400">
-                No sales data for this period
-              </div>
-            )}
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col">
           <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">

@@ -15,7 +15,7 @@ export const Layout: React.FC = () => {
           <span className="font-bold text-xl">POS</span>
         </div>
         
-        <nav className="flex-1 flex flex-col space-y-6 w-full items-center">
+        <nav className="flex-1 flex flex-col space-y-6 w-full items-center overflow-y-auto">
           <NavLink to="/" icon={<Home />} label="Home" />
           <NavLink to="/sales" icon={<ShoppingCart />} label="Sales" />
           <NavLink to="/inventory" icon={<Package />} label="Inventory" />
@@ -42,7 +42,7 @@ export const Layout: React.FC = () => {
           
           <button
             onClick={logout}
-            className="p-3 rounded-xl hover:bg-red-600 transition-colors group relative flex justify-center"
+            className="p-3 rounded-xl bg-red-600/20 text-red-400 hover:bg-red-600 hover:text-white transition-colors group relative flex justify-center mt-2"
             title="Logout"
           >
             <LogOut size={20} />
