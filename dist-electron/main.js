@@ -177,8 +177,8 @@ class DBManager {
       VALUES (@name, @cost_price, @selling_price, @tax_rate, @category)
     `);
     const insertVariant = this.db.prepare(`
-      INSERT INTO variants (product_id, size, color, stock_qty)
-      VALUES (@product_id, @size, @color, @stock_qty)
+      INSERT INTO variants (product_id, size, color, stock_qty, cost_price, selling_price)
+      VALUES (@product_id, @size, @color, @stock_qty, @cost_price, @selling_price)
     `);
     const transaction = this.db.transaction(() => {
       const info = insertProduct.run(product);
@@ -196,8 +196,8 @@ class DBManager {
       VALUES (@name, @cost_price, @selling_price, @tax_rate, @category)
     `);
     const insertVariant = this.db.prepare(`
-      INSERT INTO variants (product_id, size, color, stock_qty)
-      VALUES (@product_id, @size, @color, @stock_qty)
+      INSERT INTO variants (product_id, size, color, stock_qty, cost_price, selling_price)
+      VALUES (@product_id, @size, @color, @stock_qty, @cost_price, @selling_price)
     `);
     const transaction = this.db.transaction(() => {
       let count = 0;
