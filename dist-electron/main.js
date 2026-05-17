@@ -268,6 +268,27 @@ class DBManager {
     `;
     return this.db.prepare(query).all(startDate, endDate);
   }
+  getSalesItemsReport(startDate, endDate) {
+    const query = `
+      SELECT 
+        DATE(s.timestamp) as sale_date,
+        p.name,
+        v.size,
+        v.color,
+        p.category,
+        SUM(si.qty) as total_qty,
+        SUM(si.qty * si.price_at_sale) as total_revenue,
+        SUM(si.qty * (si.price_at_sale - si.cost_at_sale)) as total_profit
+      FROM sales s
+      JOIN sale_items si ON s.id = si.sale_id
+      JOIN variants v ON si.variant_id = v.id
+      JOIN products p ON v.product_id = p.id
+      WHERE datetime(s.timestamp) BETWEEN datetime(?) AND datetime(?)
+      GROUP BY DATE(s.timestamp), p.id, v.id
+      ORDER BY sale_date DESC, total_revenue DESC
+    `;
+    return this.db.prepare(query).all(startDate, endDate);
+  }
   getSalesTrend(startDate, endDate) {
     const query = `
       SELECT 
@@ -472,6 +493,9 @@ app.whenReady().then(() => {
   });
   ipcMain.handle("get-profit-report", (_event, startDate, endDate) => {
     return db.getProfitReport(startDate, endDate);
+  });
+  ipcMain.handle("get-sales-items-report", (_event, startDate, endDate) => {
+    return db.getSalesItemsReport(startDate, endDate);
   });
   ipcMain.handle("get-sales-trend", (_event, startDate, endDate) => {
     return db.getSalesTrend(startDate, endDate);

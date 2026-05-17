@@ -104,6 +104,10 @@ app.whenReady().then(() => {
     return db.getProfitReport(startDate, endDate)
   })
 
+  ipcMain.handle('get-sales-items-report', (_event, startDate, endDate) => {
+    return db.getSalesItemsReport(startDate, endDate)
+  })
+
   ipcMain.handle('get-sales-trend', (_event, startDate, endDate) => {
     return db.getSalesTrend(startDate, endDate)
   })

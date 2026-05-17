@@ -8,9 +8,9 @@ export const Home: React.FC = () => {
   const [stats, setStats] = useState({
     todaySales: 0,
     totalOrders: 0,
-    lowStock: 0,
     inventoryValue: 0
   });
+  const [lowStockItems, setLowStockItems] = useState<any[]>([]);
   const [dateRange, setDateRange] = useState('today');
 
   const loadData = async () => {
@@ -41,9 +41,14 @@ export const Home: React.FC = () => {
       setTrend(trendData);
       
       // Calculate basic stats
-      const lowStockCount = products.reduce((acc, p) => 
-        acc + p.variants.filter(v => v.stock_qty < 5).length, 0
+      const lowStockItemsList = products.flatMap(p => 
+        p.variants.filter(v => v.stock_qty < 5).map(v => ({
+          name: p.name,
+          variant: v.size === 'Each' && v.color === 'Generic' ? 'Default' : `${v.size} · ${v.color}`,
+          stock_qty: v.stock_qty
+        }))
       );
+      setLowStockItems(lowStockItemsList);
 
       const inventoryValue = products.reduce((acc, p) => 
         acc + p.variants.reduce((vAcc, v) => vAcc + (v.stock_qty * p.selling_price), 0), 0
@@ -52,7 +57,6 @@ export const Home: React.FC = () => {
       setStats({
         todaySales: profitData.reduce((acc, r) => acc + r.revenue, 0),
         totalOrders: 0, 
-        lowStock: lowStockCount,
         inventoryValue: inventoryValue
       });
     } catch (err) {
@@ -122,15 +126,30 @@ export const Home: React.FC = () => {
           <p className="text-sm text-gray-500 mt-2">Total profit after costs</p>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="p-3 bg-orange-50 text-orange-600 rounded-xl">
-              <AlertTriangle size={24} />
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col max-h-48">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-orange-50 text-orange-600 rounded-xl">
+                <AlertTriangle size={24} />
+              </div>
+              <h3 className="text-gray-500 font-medium">Low Stock</h3>
             </div>
-            <h3 className="text-gray-500 font-medium">Low Stock</h3>
+            <span className="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs font-bold">{lowStockItems.length}</span>
           </div>
-          <p className="text-3xl font-bold text-orange-600">{stats.lowStock}</p>
-          <p className="text-sm text-gray-500 mt-2">Items with less than 5 units</p>
+          <div className="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+            {lowStockItems.map((item, idx) => (
+              <div key={idx} className="flex justify-between items-center text-sm border-b pb-2 last:border-0 border-gray-50">
+                <div>
+                  <div className="font-medium text-gray-800">{item.name}</div>
+                  {item.variant !== 'Default' && <div className="text-xs text-gray-400">{item.variant}</div>}
+                </div>
+                <div className="font-bold text-orange-600">{item.stock_qty} left</div>
+              </div>
+            ))}
+            {lowStockItems.length === 0 && (
+              <div className="text-sm text-gray-400 text-center py-4">All stock is healthy!</div>
+            )}
+          </div>
         </div>
       </div>
 

@@ -319,6 +319,28 @@ export class DBManager {
     return this.db.prepare(query).all(startDate, endDate);
   }
 
+  public getSalesItemsReport(startDate: string, endDate: string) {
+    const query = `
+      SELECT 
+        DATE(s.timestamp) as sale_date,
+        p.name,
+        v.size,
+        v.color,
+        p.category,
+        SUM(si.qty) as total_qty,
+        SUM(si.qty * si.price_at_sale) as total_revenue,
+        SUM(si.qty * (si.price_at_sale - si.cost_at_sale)) as total_profit
+      FROM sales s
+      JOIN sale_items si ON s.id = si.sale_id
+      JOIN variants v ON si.variant_id = v.id
+      JOIN products p ON v.product_id = p.id
+      WHERE datetime(s.timestamp) BETWEEN datetime(?) AND datetime(?)
+      GROUP BY DATE(s.timestamp), p.id, v.id
+      ORDER BY sale_date DESC, total_revenue DESC
+    `;
+    return this.db.prepare(query).all(startDate, endDate);
+  }
+
   public getSalesTrend(startDate: string, endDate: string) {
     const query = `
       SELECT 

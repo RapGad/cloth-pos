@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { TrendingUp, ShoppingBag, PieChart, Download } from 'lucide-react';
+import { TrendingUp, ShoppingBag, PieChart, Download, List } from 'lucide-react';
 import { api } from '../api.ts';
+import { exportToCSV } from '../utils/csv.ts';
 
 export const Reports: React.FC = () => {
   const [report, setReport] = useState<any[]>([]);
+  const [itemsReport, setItemsReport] = useState<any[]>([]);
   const [dateRange, setDateRange] = useState('month');
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
@@ -28,13 +30,25 @@ export const Reports: React.FC = () => {
       end.setHours(23, 59, 59, 999);
     }
 
-    const data = await api.getProfitReport(start.toISOString(), end.toISOString());
+    const [data, itemsData] = await Promise.all([
+      api.getProfitReport(start.toISOString(), end.toISOString()),
+      api.getSalesItemsReport(start.toISOString(), end.toISOString())
+    ]);
     setReport(data);
+    setItemsReport(itemsData);
   };
 
   useEffect(() => {
     loadReport();
   }, [dateRange, customStart, customEnd]);
+
+  const handleExportCategoryCSV = () => {
+    exportToCSV(report, `category_report_${dateRange}`);
+  };
+
+  const handleExportItemsCSV = () => {
+    exportToCSV(itemsReport, `items_sold_${dateRange}`);
+  };
 
   const totalRevenue = report.reduce((acc, r) => acc + r.revenue, 0);
   const totalProfit = report.reduce((acc, r) => acc + r.profit, 0);
@@ -109,7 +123,10 @@ export const Reports: React.FC = () => {
             <PieChart size={20} className="text-blue-600" />
             Category Breakdown
           </h3>
-          <button className="text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors">
+          <button 
+            onClick={handleExportCategoryCSV}
+            className="text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors"
+          >
             <Download size={16} />
             Export CSV
           </button>
@@ -144,6 +161,57 @@ export const Reports: React.FC = () => {
                 <tr>
                   <td colSpan={4} className="py-20 text-center text-gray-400">
                     No data available for the selected period.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-2xl shadow-sm border flex-1 flex flex-col">
+        <div className="p-6 border-b flex justify-between items-center bg-gray-50 rounded-t-2xl">
+          <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+            <List size={20} className="text-blue-600" />
+            Items Sold
+          </h3>
+          <button 
+            onClick={handleExportItemsCSV}
+            className="text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors"
+          >
+            <Download size={16} />
+            Export CSV
+          </button>
+        </div>
+        <div className="overflow-auto max-h-96 p-6">
+          <table className="w-full">
+            <thead className="text-left text-gray-500 text-sm border-b sticky top-0 bg-white">
+              <tr>
+                <th className="pb-4 font-medium">Date</th>
+                <th className="pb-4 font-medium">Item Name</th>
+                <th className="pb-4 font-medium">Variant</th>
+                <th className="pb-4 font-medium text-center">Qty Sold</th>
+                <th className="pb-4 font-medium text-right">Revenue</th>
+                <th className="pb-4 font-medium text-right">Profit</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {itemsReport.map((item, idx) => (
+                <tr key={idx} className="hover:bg-gray-50 transition-colors">
+                  <td className="py-4 text-gray-500 text-sm">{item.sale_date}</td>
+                  <td className="py-4 font-medium text-gray-800">{item.name}</td>
+                  <td className="py-4 text-gray-500 text-sm">
+                    {item.size === 'Each' && item.color === 'Generic' ? 'Default' : `${item.size} · ${item.color}`}
+                  </td>
+                  <td className="py-4 text-center font-bold text-gray-700">{item.total_qty}</td>
+                  <td className="py-4 text-right text-gray-600">GH₵{item.total_revenue.toFixed(2)}</td>
+                  <td className="py-4 text-right font-bold text-green-600">GH₵{item.total_profit.toFixed(2)}</td>
+                </tr>
+              ))}
+              {itemsReport.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="py-20 text-center text-gray-400">
+                    No items sold during the selected period.
                   </td>
                 </tr>
               )}
