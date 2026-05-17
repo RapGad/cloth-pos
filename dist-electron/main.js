@@ -405,6 +405,7 @@ class DBManager {
 }
 app.commandLine.appendSwitch("disable-features", "Autofill,PasswordManager,AutofillServerCommunication,AutofillAddressEnabled,AutofillCreditCardEnabled");
 app.commandLine.appendSwitch("disable-autofill");
+app.disableHardwareAcceleration();
 console.log("Autofill features disabled via command line switches");
 const __dirname$1 = path$1.dirname(fileURLToPath(import.meta.url));
 process.env.APP_ROOT = path$1.join(__dirname$1, "..");

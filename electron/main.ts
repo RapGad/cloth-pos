@@ -2,6 +2,7 @@ import { app, BrowserWindow, ipcMain } from 'electron'
 
 app.commandLine.appendSwitch('disable-features', 'Autofill,PasswordManager,AutofillServerCommunication,AutofillAddressEnabled,AutofillCreditCardEnabled')
 app.commandLine.appendSwitch('disable-autofill')
+app.disableHardwareAcceleration()
 console.log('Autofill features disabled via command line switches')
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'

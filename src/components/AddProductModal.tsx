@@ -66,8 +66,8 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ onClose, onSuc
     try {
       const productData = {
         name,
-        cost_price: parseFloat(costPrice),
-        selling_price: parseFloat(sellingPrice),
+        cost_price: parseFloat(costPrice) || 0,
+        selling_price: parseFloat(sellingPrice) || 0,
         tax_rate: 0,
         category: category
       };
@@ -86,8 +86,8 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ onClose, onSuc
           size: 'Each', 
           color: 'Generic', 
           stock_qty: stockQty,
-          cost_price: parseFloat(costPrice),
-          selling_price: parseFloat(sellingPrice)
+          cost_price: parseFloat(costPrice) || 0,
+          selling_price: parseFloat(sellingPrice) || 0
         }];
       }
 
@@ -146,7 +146,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ onClose, onSuc
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Cost Price (GH₵)</label>
               <input 
-                required
+                required={!hasVariants}
                 type="number"
                 step="0.01"
                 className="w-full border rounded-lg p-2"
@@ -157,7 +157,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ onClose, onSuc
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Selling Price (GH₵)</label>
               <input 
-                required
+                required={!hasVariants}
                 type="number"
                 step="0.01"
                 className="w-full border rounded-lg p-2"
